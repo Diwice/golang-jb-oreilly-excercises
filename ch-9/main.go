@@ -1,11 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
 )
+
 // 1
 var mySigErr = errors.New("Some error")
+
 // 2
 type myStructErr struct {
 	Employee string
@@ -22,6 +24,7 @@ type otherStructErr struct {
 func (o otherStructErr) Error() string {
 	return fmt.Sprintf("OtherErr: %w", o.Field)
 }
+
 // 3
 type wrappedErrStruct struct {
 	Errors []error
@@ -61,16 +64,16 @@ func main() {
 	uE := errors.New("Unknown error")
 	wrappedErrors := wrappedErrStruct{Errors: []error{sE, structE}}
 	errTable := [5]error{sE, structE, structE2, uE, wrappedErrors}
-	accumulator := "" 
+	accumulator := ""
 	for i := range errTable {
 		switch err := errTable[i].(type) {
-			case interface { Unwrap() []error }:
-				errors := err.Unwrap()
-				for j := range errors {
-					accumulator += fmt.Sprintf("%s\n", handleErr(errors[j])) // produces extra newline. usage of slice preferred 
-				}
-			default:
-				accumulator += fmt.Sprintf("%s\n", handleErr(err))
+		case interface{ Unwrap() []error }:
+			errors := err.Unwrap()
+			for j := range errors {
+				accumulator += fmt.Sprintf("%s\n", handleErr(errors[j])) // produces extra newline. usage of slice preferred
+			}
+		default:
+			accumulator += fmt.Sprintf("%s\n", handleErr(err))
 		}
 	}
 	fmt.Println(accumulator)
