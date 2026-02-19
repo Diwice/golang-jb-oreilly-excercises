@@ -72,10 +72,10 @@ func getJLevel(ctx context.Context) Level {
 	return val
 }
 
-func logMiddleware(h http.Handler) http.Handler {
+func logMiddleware(h http.Handler, logLevel Level) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		level := r.URL.Query().Get("log_level")
-		r = r.WithContext(writeJLevel(r.Context(), Debug))
+		r = r.WithContext(writeJLevel(r.Context(), logLevel))
 		Log(r.Context(), Level(level), "Received request")
 		h.ServeHTTP(w, r)
 	})
@@ -100,6 +100,6 @@ func main() { // 2
 	// 1 + 3
 	timeoutMw := middlewareWithTimeout(rand.Intn(100000000))
 	mux := http.NewServeMux()
-	mux.Handle("/", logMiddleware(timeoutMw(http.HandlerFunc(randomHandler))))
+	mux.Handle("/", logMiddleware(timeoutMw(http.HandlerFunc(randomHandler)), Debug))
 	http.ListenAndServe("localhost:8080", mux)
 }
