@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	dp "github.com/Diwice/golang-jb-oreilly-excercises/ch-15/simplewebapp/internal/data_processor"
 	"net/http"
 	"os"
+	dp "simplewebapp/internal/data_processor"
 )
 
 func main() {

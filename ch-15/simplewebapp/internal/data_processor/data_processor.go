@@ -2,6 +2,7 @@ package data_processor
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -23,6 +24,9 @@ type Input struct {
 func parser(data []byte) (Input, error) {
 	// parse the data
 	lines := bytes.Split(data, []byte("\n"))
+	if len(lines) < 4 {
+		return Input{}, errors.New("Invalid format, could not parse")
+	}
 	// each entry is line 1 id, line 2 operator, line 3 num 1, line 4 num2
 	id := string(lines[0])
 	op := string(lines[1])
