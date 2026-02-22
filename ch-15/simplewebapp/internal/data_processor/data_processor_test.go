@@ -3,12 +3,28 @@ package data_processor
 import (
 	"bytes"
 	"errors"
+	"fmt"
+	"github.com/stretchr/testify/mock"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"testing"
 )
+
+type mockReadCloser struct {
+	mock.Mock
+}
+
+func (m *mockReadCloser) Read(p []byte) (n int, err error) {
+	args := m.Called(p)
+	return args.Int(0), args.Error(1)
+}
+
+func (m *mockReadCloser) Close() error {
+	args := m.Called()
+	return args.Error(0)
+}
 
 func TestParser(t *testing.T) {
 	type testCase struct {
@@ -47,6 +63,16 @@ func TestParser(t *testing.T) {
 				Val2: 0,
 			},
 			err: strconv.ErrSyntax,
+		},
+		{
+			inp: []byte(""),
+			out: Input{
+				Id:   "",
+				Op:   "",
+				Val1: 0,
+				Val2: 0,
+			},
+			err: errInvalidFormat,
 		},
 	}
 
@@ -108,6 +134,14 @@ func TestDataProcessor(t *testing.T) {
 				Value: 0,
 			},
 		},
+		{
+			paramIn:  make(chan []byte, 100),
+			paramOut: make(chan Result, 100),
+			expVal: Result{
+				Id:    "Unknown/Error - Invalid Format",
+				Value: 0,
+			},
+		},
 	}
 
 	testCases[0].paramIn <- []byte("test-1\n+\n1\n0")
@@ -115,11 +149,13 @@ func TestDataProcessor(t *testing.T) {
 	testCases[2].paramIn <- []byte("test-3\n*\n3\n1")
 	testCases[3].paramIn <- []byte("test-4\n/\n8\n2")
 	testCases[4].paramIn <- []byte("test-5\nrandom\n100\n200")
+	testCases[5].paramIn <- []byte("two\nlines")
 	close(testCases[0].paramIn)
 	close(testCases[1].paramIn)
 	close(testCases[2].paramIn)
 	close(testCases[3].paramIn)
 	close(testCases[4].paramIn)
+	close(testCases[5].paramIn)
 
 	for _, tc := range testCases {
 		DataProcessor(tc.paramIn, tc.paramOut)
@@ -186,6 +222,10 @@ func TestNewController(t *testing.T) {
 	stubChan := make(chan []byte, 100)
 	testHandler := NewController(stubChan)
 
+	mockBuffer := &mockReadCloser{}
+	mockBuffer.On("Read", mock.AnythingOfType("[]uint8")).Return(0, fmt.Errorf("Error Reading"))
+	mockBuffer.On("Close").Return(fmt.Errorf("Error Closing"))
+
 	testCases := []testCase{
 		{
 			paramW:        httptest.NewRecorder(),
@@ -198,6 +238,12 @@ func TestNewController(t *testing.T) {
 			paramR:        httptest.NewRequest("POST", "/", bytes.NewBufferString("test-1\n-\n1\n1")),
 			expVal:        []byte("OK: "),
 			expStatusCode: http.StatusAccepted,
+		},
+		{
+			paramW:        httptest.NewRecorder(),
+			paramR:        httptest.NewRequest("POST", "/", mockBuffer),
+			expVal:        []byte("Bad Input"),
+			expStatusCode: http.StatusBadRequest,
 		},
 	}
 
@@ -217,5 +263,32 @@ func TestNewController(t *testing.T) {
 		if val.StatusCode != tc.expStatusCode {
 			t.Errorf("Expected Status Code %v; got %v", tc.expStatusCode, val.StatusCode)
 		}
+	}
+	// Simulating full inp channel
+	newStubChan := make(chan []byte, 1)
+	newTestHandler := NewController(newStubChan)
+	newStubChan <- []byte("some value")
+
+	lastTestCase := testCase{
+		paramW:        httptest.NewRecorder(),
+		paramR:        httptest.NewRequest("POST", "/", bytes.NewBufferString("test-3\n+\n2\n1")),
+		expVal:        []byte("Too Busy: "),
+		expStatusCode: http.StatusServiceUnavailable,
+	}
+
+	newTestHandler.ServeHTTP(lastTestCase.paramW, lastTestCase.paramR)
+	val := lastTestCase.paramW.Result()
+	defer val.Body.Close()
+	valData, err := io.ReadAll(val.Body)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	if !bytes.Contains(valData, lastTestCase.expVal) {
+		t.Errorf("Expected '%s' to contain '%s'", string(valData), string(lastTestCase.expVal))
+	}
+
+	if val.StatusCode != lastTestCase.expStatusCode {
+		t.Errorf("Expected Status Code %v; got %v", lastTestCase.expStatusCode, val.StatusCode)
 	}
 }

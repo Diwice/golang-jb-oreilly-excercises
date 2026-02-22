@@ -9,6 +9,8 @@ import (
 	"strconv"
 )
 
+var errInvalidFormat = errors.New("Invalid Format")
+
 type Result struct {
 	Id    string
 	Value int
@@ -25,7 +27,7 @@ func parser(data []byte) (Input, error) {
 	// parse the data
 	lines := bytes.Split(data, []byte("\n"))
 	if len(lines) < 4 {
-		return Input{}, errors.New("Invalid format, could not parse")
+		return Input{}, errInvalidFormat
 	}
 	// each entry is line 1 id, line 2 operator, line 3 num 1, line 4 num2
 	id := string(lines[0])
@@ -50,8 +52,15 @@ func DataProcessor(in <-chan []byte, out chan<- Result) {
 	for data := range in {
 		input, err := parser(data)
 		if err != nil {
+			input.Id = fmt.Sprintf("Unknown/Error - %v", err)
+			result := Result{
+				Id:    input.Id,
+				Value: 0,
+			}
+			out <- result
 			continue
 		}
+
 		var calc int
 		switch input.Op {
 		case "+":
