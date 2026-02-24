@@ -19,3 +19,5 @@ So, either it remains unfixed in this repo, or I fixed it beforehand in Task 1.
 Can't really tell what exactly had it fixed, could only speculate that closing channel early inside DP caused issues inside WD, since they're separate goroutines and pretty much nothing else there could've caused race condition.
 Closing channel early, however, messed up the inputs (request body reads) aswell.. Only removed it because noticed exactly this reason even before launching the code.
 Don't know if the author intended it that way, either.
+### Task 3
+Pretty much no issues here, except the fact that I decided to test DP before parser itself (which the task asks me to do). Well, did that too.
