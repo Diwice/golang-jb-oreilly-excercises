@@ -142,6 +142,14 @@ func TestDataProcessor(t *testing.T) {
 				Value: 0,
 			},
 		},
+		{
+			paramIn:  make(chan []byte, 100),
+			paramOut: make(chan Result, 100),
+			expVal: Result{
+				Id:    "test-7/Error - Division by zero",
+				Value: 0,
+			},
+		},
 	}
 
 	testCases[0].paramIn <- []byte("test-1\n+\n1\n0")
@@ -150,12 +158,14 @@ func TestDataProcessor(t *testing.T) {
 	testCases[3].paramIn <- []byte("test-4\n/\n8\n2")
 	testCases[4].paramIn <- []byte("test-5\nrandom\n100\n200")
 	testCases[5].paramIn <- []byte("two\nlines")
+	testCases[6].paramIn <- []byte("test-7\n/\n0\n0")
 	close(testCases[0].paramIn)
 	close(testCases[1].paramIn)
 	close(testCases[2].paramIn)
 	close(testCases[3].paramIn)
 	close(testCases[4].paramIn)
 	close(testCases[5].paramIn)
+	close(testCases[6].paramIn)
 
 	for _, tc := range testCases {
 		DataProcessor(tc.paramIn, tc.paramOut)

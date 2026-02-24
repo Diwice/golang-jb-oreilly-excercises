@@ -70,7 +70,11 @@ func DataProcessor(in <-chan []byte, out chan<- Result) {
 		case "*":
 			calc = input.Val1 * input.Val2
 		case "/":
-			calc = input.Val1 / input.Val2
+			if input.Val2 == 0 {
+				input.Id = input.Id + "/Error - Division by zero"
+			} else {
+				calc = input.Val1 / input.Val2
+			}
 		default:
 			input.Id = input.Id + "/Error - Unknown Operand"
 		}
