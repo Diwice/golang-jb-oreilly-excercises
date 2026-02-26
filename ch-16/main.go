@@ -1,4 +1,5 @@
 package main
+
 // 3
 
 /*
@@ -26,11 +27,11 @@ int mini_calc(char *op, int a, int b) {
 import "C"
 
 import (
+	"chap_16/internal/orders"
 	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
-	"chap_16/internal/orders"
 	"unsafe"
 )
 
@@ -83,7 +84,7 @@ func printSizesAndOffsets(inp any) {
 			unsafe.Offsetof(v.IsReady),
 		)
 	}
-} 
+}
 
 func main() { // 1
 	structOne := strLenStruct{"some symbols", "more symbols"}
