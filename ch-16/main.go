@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"chap_16/internal/orders"
+	"unsafe"
 )
 
 type strLenStruct struct {
@@ -35,6 +37,29 @@ func ValidateStringLength(inp any) error {
 	return errWrapper
 }
 
+func printSizesAndOffsets(inp any) {
+	switch v := inp.(type) {
+	case orders.OrderInfo:
+		fmt.Println("OI, Total Size:", unsafe.Sizeof(v))
+		fmt.Printf("Offsets: %v field 1, %v field 2, %v field 3, %v field 4, %v field 5\n",
+			unsafe.Offsetof(v.OrderCode),
+			unsafe.Offsetof(v.Amount),
+			unsafe.Offsetof(v.OrderNumber),
+			unsafe.Offsetof(v.Items),
+			unsafe.Offsetof(v.IsReady),
+		)
+	case orders.SmallOrderInfo:
+		fmt.Println("SOI, Total Size:", unsafe.Sizeof(v))
+		fmt.Printf("Offsets: %v field 1, %v field 2, %v field 3, %v field 4, %v field 5\n",
+			unsafe.Offsetof(v.Items),
+			unsafe.Offsetof(v.Amount),
+			unsafe.Offsetof(v.OrderCode),
+			unsafe.Offsetof(v.OrderNumber),
+			unsafe.Offsetof(v.IsReady),
+		)
+	}
+} 
+
 func main() { // 1
 	structOne := strLenStruct{"some symbols", "more symbols"}
 	structTwo := strLenStruct{"invalid", ""}
@@ -45,4 +70,9 @@ func main() { // 1
 			fmt.Printf("%v (%v) produced an error: %v\n", reflect.TypeOf(inputs[i]).Name(), inputs[i], err)
 		}
 	}
+	// 2
+	defaultOI := orders.OrderInfo{}
+	smallOI := orders.SmallOrderInfo{}
+	printSizesAndOffsets(defaultOI)
+	printSizesAndOffsets(smallOI)
 }
