@@ -1,4 +1,29 @@
 package main
+// 3
+
+/*
+#include <string.h>
+
+int mini_calc(char *op, int a, int b) {
+    if (strcmp(op, "+") == 0) {
+        return a + b;
+    }
+    if (strcmp(op, "*") == 0) {
+        return a * b;
+    }
+    if (strcmp(op, "-") == 0) {
+        return a - b;
+    }
+    if (strcmp(op, "/") == 0) {
+        if (b == 0) {
+            return 0;
+        }
+        return a / b;
+    }
+    return 0;
+}
+*/
+import "C"
 
 import (
 	"errors"
@@ -75,4 +100,10 @@ func main() { // 1
 	smallOI := orders.SmallOrderInfo{}
 	printSizesAndOffsets(defaultOI)
 	printSizesAndOffsets(smallOI)
+	// 3
+	cs := C.CString("/")
+	var cI1 C.int = 10
+	var cI2 C.int = 2
+	res := C.mini_calc(cs, cI1, cI2)
+	fmt.Println("Task 3: result -", res)
 }
